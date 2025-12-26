@@ -1,5 +1,6 @@
-### New Year Watcher
+## New Year Watcher
 
+```bash
 current-app/
 ├── backend/
 │   ├── main.py 
@@ -18,6 +19,7 @@ current-app/
 │   ├── tailwind.config.js
 │   └── vite.config.js
 └── README.md
+```
 
 
 ### Setup Instructions
