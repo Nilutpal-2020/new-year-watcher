@@ -1,0 +1,10 @@
+.vscode
+venv
+__pycache__
+
+*node_modules
+.DS_Store
+dist
+.env
+*.pytest_cache
+*tests
