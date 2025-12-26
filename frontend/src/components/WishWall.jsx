@@ -7,6 +7,9 @@ const WishWall = ({ wishes, currentTime, isWsConnected }) => {
     const [message, setMessage] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    const WS_TIMEOUT = import.meta.env.WS_TIMEOUT || 300;
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!message.trim()) return;
@@ -16,7 +19,7 @@ const WishWall = ({ wishes, currentTime, isWsConnected }) => {
             // Auto-detect user timezone
             const region = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-            await axios.post('http://localhost:8000/wish', {
+            await axios.post(`${API_URL}/wish`, {
                 name: name || "Anonymous",
                 message,
                 region
@@ -43,6 +46,7 @@ const WishWall = ({ wishes, currentTime, isWsConnected }) => {
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
+                            maxLength={50}
                             className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-sm focus:border-amber-400 focus:outline-none transition-colors"
                             placeholder="Anonymous"
                         />
@@ -82,11 +86,16 @@ const WishWall = ({ wishes, currentTime, isWsConnected }) => {
             {/* Feed Section */}
             <div className="md:w-2/3 bg-slate-800/50 rounded-xl border border-slate-700 p-4 flex flex-col h-[370px] relative">
                 <div className="flex justify-between items-center mb-4 sticky top-0 bg-slate-800/80 backdrop-blur-sm p-1 rounded-lg z-10">
-                    <h3 className="text-lg font-semibold text-slate-300">Live Global Wishes</h3>
+                    <h3 className="text-lg font-semibold text-slate-300 pl-2">Live Global Wishes</h3>
                     {!isWsConnected && (
                         <div className="flex items-center gap-2 px-3 py-1 bg-red-500/10 border border-red-500/50 rounded-full animate-pulse">
                             <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
                             <span className="text-[10px] font-bold text-red-400 uppercase tracking-tighter">Disconnected</span>
+                        </div>
+                    ) || (
+                        <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/50 rounded-full animate-pulse">
+                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                            <span className="text-[10px] font-bold text-green-400 uppercase tracking-tighter">Live</span>
                         </div>
                     )}
                 </div>
@@ -94,7 +103,8 @@ const WishWall = ({ wishes, currentTime, isWsConnected }) => {
                 <div className="wish-scroll overflow-y-auto flex-1 space-y-4 pr-2">
                     {!isWsConnected && (
                         <div className="bg-slate-900/90 border border-slate-700 p-3 rounded-lg text-center mb-4 flex flex-col gap-2 shadow-2xl">
-                            <p className="text-xs text-slate-400">Connection lost!</p>
+                            {/* <p className="text-xs text-slate-400">Connection lost! Attempting to reconnect...</p> */}
+                            <p className="text-xs text-slate-400">Once connected, the session remains active for {WS_TIMEOUT/60} minutes.</p>
                             <button
                                 onClick={() => window.location.reload()}
                                 className="text-[10px] text-amber-500 font-bold hover:underline"
@@ -106,26 +116,32 @@ const WishWall = ({ wishes, currentTime, isWsConnected }) => {
                     {wishes.length === 0 ? (
                         <div className="text-center text-slate-500 mt-10">Be the first to wish the world a Happy New Year!</div>
                     ) : (
-                        wishes.map((w, idx) => (
-                            <div key={idx} className="flex flex-col items-start gap-1">
-                                <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-4 rounded-2xl rounded-tl-none border border-slate-700/50 hover:border-amber-500/30 transition-all shadow-md max-w-[90%] group">
-                                    <p className="text-slate-100 text-sm leading-relaxed">"{w.message}"</p>
-                                    <div className="flex justify-between items-center mt-3 gap-4 border-t border-slate-700/50 pt-2">
-                                        <span className="text-amber-400 text-[11px] font-bold tracking-tight uppercase">
-                                            {w.name}
-                                        </span>
+                        wishes.map((w, idx) => {
+                            const messageTime = DateTime.fromISO(w.timestamp, { zone: 'utc' });
+                            const diffSeconds = Math.abs(
+                                currentTime.diff(messageTime, 'seconds').seconds
+                            );
+
+                            const timeLablel = diffSeconds < 60 ? "just now" : messageTime.toRelative({ base: currentTime });
+                            return (
+                                <div key={idx} className="flex flex-col items-start gap-1 w-full">
+                                    <div className="flex justify-between items-center bg-gradient-to-br from-slate-800 to-slate-900 p-4 rounded-2xl rounded-tl-none border border-slate-700/50 hover:border-amber-500/30 transition-all shadow-md w-full max-w-[100%] group">
+                                        <span className="text-slate-100 text-sm leading-relaxed">"{w.message}"</span>
                                         <span className="text-[10px] text-slate-500 italic">
                                             {w.region}
                                         </span>
                                     </div>
+                                    <div className="flex justify-between items-center gap-4 text-[9px] text-slate-600 ml-1">
+                                        <span className="text-amber-400 text-[11px] tracking-tight capitalize">
+                                            - {w.name}
+                                        </span>
+                                        <span className="text-[10px] text-slate-500 italic">
+                                            {timeLablel}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div className="text-[9px] text-slate-600 ml-1">
-                                    {Math.abs(currentTime.diff(DateTime.fromISO(w.timestamp), 'seconds').seconds) < 60
-                                        ? 'just now'
-                                        : DateTime.fromISO(w.timestamp).toRelative({ base: currentTime })}
-                                </div>
-                            </div>
-                        ))
+                            )
+                        })
                     )}
                 </div>
             </div>

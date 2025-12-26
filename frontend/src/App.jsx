@@ -80,13 +80,13 @@ function App() {
                 console.log(`❌ WebSocket Closed: ${event.code} ${event.reason}`);
                 setIsWsConnected(false);
 
-                // Only reconnect if not closed intentionally by the client (code 1000)
-                if (event.code !== 1000) {
-                    reconnectTimeoutRef.current = setTimeout(() => {
-                        console.log("Retrying connection...");
-                        connectWebSocket();
-                    }, 5000);
-                }
+                // // Only reconnect if not closed intentionally by the client (code 1000)
+                // if (event.code !== 1000) {
+                //     reconnectTimeoutRef.current = setTimeout(() => {
+                //         console.log("Retrying connection...");
+                //         connectWebSocket();
+                //     }, 5000);
+                // }
             };
 
             ws.current.onerror = (err) => {
@@ -94,7 +94,7 @@ function App() {
             };
         };
 
-        // connectWebSocket();
+        connectWebSocket();
 
         return () => {
             clearInterval(clockInterval);
@@ -149,9 +149,9 @@ function App() {
                     <MapViz midnightLon={midnightLon} />
                 </section>
 
-                {/* <section>
+                <section>
                     <WishWall wishes={wishes} currentTime={currentTime} isWsConnected={isWsConnected} />
-                </section> */}
+                </section>
 
                 <footer className="text-center text-slate-600 text-xs py-8">
                     <p>&copy; NewYearWatcher. Live Updates via WebSockets.</p>

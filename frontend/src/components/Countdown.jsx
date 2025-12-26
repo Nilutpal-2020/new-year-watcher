@@ -10,7 +10,7 @@ const POPULAR_CITIES = [
 ];
 
 const ALL_ZONES = [
-    { label: "(UTC-12) Baker Island", value: "Pacific/Waitangi" },
+    { label: "(UTC-12) Baker Island", value: "Etc/GMT+12" },
     { label: "(UTC-11) Pago Pago", value: "Pacific/Pago_Pago" },
     { label: "(UTC-10) Honolulu", value: "Pacific/Honolulu" },
     { label: "(UTC-9) Anchorage", value: "America/Anchorage" },
