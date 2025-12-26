@@ -5,6 +5,9 @@ import MapViz from './components/MapViz';
 import WishWall from './components/WishWall';
 import Countdown from './components/Countdown';
 
+import { SpeedInsights } from "@vercel/speed-insights/react"
+import { Analytics } from '@vercel/analytics/react';
+
 function App() {
     const [currentTime, setCurrentTime] = useState(DateTime.now().setZone('utc'));
     const [wishes, setWishes] = useState([]);
