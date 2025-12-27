@@ -67,11 +67,12 @@ const NewsBanner = ({ recentCities }) => {
 };
 
 const CountdownCard = ({ name, zone, currentTime, isMain = false }) => {
+    // 1. Calculate future/target dates
     const nextYear = currentTime.setZone(zone).year + 1;
     const target = DateTime.fromObject({ year: nextYear, month: 1, day: 1 }, { zone });
     const diff = target.diff(currentTime.setZone(zone), ['hours', 'minutes', 'seconds']).toObject();
 
-    // Handle negative diffs (when new year just passed but before refresh captures next year)
+    // 2. Logic for "Happy New Year" vs "Countdown"
     const isPast = diff.hours < 0 || diff.minutes < 0 || diff.seconds < 0;
     const isSoon = diff.hours < 24 && diff.hours >= 0 && !isPast;
 
@@ -79,15 +80,26 @@ const CountdownCard = ({ name, zone, currentTime, isMain = false }) => {
     const displayMins = isPast ? 0 : Math.floor(diff.minutes);
     const displaySecs = isPast ? 0 : Math.floor(diff.seconds);
 
-
     return (
         <div className={`${isMain ? 'bg-amber-500/10 border-amber-500/50' : 'bg-slate-800/40 border-slate-700/50'} border p-3 rounded-lg hover:border-amber-500/30 transition-all shadow-lg`}>
+            
+            {/* Header: City Name */}
             <div className={`text-[10px] uppercase tracking-widest mb-1 ${isMain ? 'text-amber-400 font-bold' : 'text-slate-500'}`}>
-                {isMain ? 'Personalized View' : ''} {name.split('/').pop().replace('_', ' ')}
+                {isMain ? 'Personalized View:' : ''} {name.split('/').pop().replace('_', ' ')}
             </div>
-            <div className={`text-lg font-mono font-bold ${isSoon ? 'text-amber-400' : 'text-slate-200'} ${isMain ? 'text-2xl' : ''}`}>
+
+            {/* >>> NEW: Show Current Local Time (Only for Personalized View) <<< */}
+            {isMain && (
+                <div className="text-[11px] text-amber-200/60 font-mono mb-2 border-b border-amber-500/10 pb-2">
+                    <span className="text-amber-500/40 mr-1">CURRENTLY:</span>
+                    {currentTime.setZone(zone).toFormat('DDD HH:mm:ss')}
+                </div>
+            )}
+
+            {/* Main Countdown Numbers */}
+            <div className={`text-lg font-mono font-bold ${isSoon ? 'text-amber-400' : 'text-slate-200'} ${isMain ? 'text-3xl mt-1' : ''}`}>
                 {isPast ? (
-                    <span className="text-amber-500">Happy New Year!</span>
+                    <span className="text-amber-500 animate-pulse">Happy New Year!</span>
                 ) : (
                     <>
                     {String(displayHours).padStart(2, '0')}:
@@ -96,6 +108,8 @@ const CountdownCard = ({ name, zone, currentTime, isMain = false }) => {
                     </>
                 )}
             </div>
+
+            {/* Footer Text */}
             {!isPast && <div className="text-[9px] text-slate-600 mt-1 italic">until New Year</div>}
         </div>
     );

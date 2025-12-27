@@ -4,6 +4,7 @@ import { DateTime } from 'luxon';
 import MapViz from './components/MapViz';
 import WishWall from './components/WishWall';
 import Countdown from './components/Countdown';
+import ShareBlock from './components/ShareBlock';
 
 
 function App() {
@@ -40,7 +41,12 @@ function App() {
         } catch (e) { console.error("Wish fetch failed"); }
     };
 
+    const currentYear = new Date().getFullYear();
+    const nextYear = currentYear + 1;
+
     useEffect(() => {
+        document.title = `New Year Watcher | Countdown to ${nextYear}`
+
         fetchInitialWishes();
 
         const clockInterval = setInterval(() => {
@@ -199,6 +205,10 @@ function App() {
                 <section>
                     <WishWall wishes={wishes} currentTime={currentTime} isWsConnected={isWsConnected} />
                 </section>
+
+                <div className="my-6">
+                    <ShareBlock />
+                </div>
 
                 <footer className="text-center text-slate-600 text-xs py-8">
                     <p>&copy; NewYearWatcher {DateTime.now().year}. Live Updates from around the globe.</p>
