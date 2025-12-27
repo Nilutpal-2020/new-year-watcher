@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from redis import asyncio as aioredis
 from fastapi_limiter import FastAPILimiter
 from fastapi_limiter.depends import RateLimiter
+from better_profanity import profanity
 
 # --- Configuration ---
 # Load from environment variables for security in production
@@ -122,6 +123,9 @@ async def clean_old_wishes():
     # ZREMRANGEBYSCORE removes all elements with score < cutoff
     await redis_client.zremrangebyscore("wishes", min="-inf", max=cutoff)
 
+def censor_text(text: str) -> str:
+    return profanity.censor(text)
+
 # --- Endpoints ---
 @app.get("/")
 def read_root():
@@ -170,27 +174,25 @@ async def post_wish(wish: WishCreate):
     """
     if len(wish.message) > MAX_WISH_LENGTH:
         raise HTTPException(status_code=400, detail="Message too long")
+
+    clean_name = censor_text(wish.name) if wish.name else "Anonymous"
+    clean_message = censor_text(wish.message)
     
     now = datetime.now(timezone.utc)
     new_wish = Wish(
-        name=wish.name or "Anonymous",
-        message=wish.message,
+        name=clean_name,
+        message=clean_message,
         region=wish.region,
         timestamp=now
     )
     
     wish_json = json.dumps(new_wish.dict(), default=str)
     
-    # 1. Save to Redis ZSET (Score = Timestamp)
-    # This keeps them ordered by time automatically
     if redis_client:
         await redis_client.zadd("wishes", {wish_json: now.timestamp()})
         
-        # 2. Fire-and-forget cleanup (probability-based or scheduled is better, 
-        # but doing it here is simple for this scale)
         asyncio.create_task(clean_old_wishes())
 
-    # 3. Broadcast to realtime users
     await manager.broadcast(new_wish.dict())
     
     return new_wish

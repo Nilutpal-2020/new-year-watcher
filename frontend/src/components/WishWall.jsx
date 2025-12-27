@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { DateTime } from 'luxon';
 
+import { track } from '@vercel/analytics';
+import { toast } from 'sonner';
+
 const WishWall = ({ wishes, currentTime, isWsConnected }) => {
     const [name, setName] = useState('');
     const [message, setMessage] = useState('');
@@ -12,7 +15,9 @@ const WishWall = ({ wishes, currentTime, isWsConnected }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!message.trim()) return;
+        if (!message.trim()) {
+            toast.error("Message can't be empty");
+        };
 
         setIsSubmitting(true);
         try {
@@ -26,16 +31,28 @@ const WishWall = ({ wishes, currentTime, isWsConnected }) => {
             });
 
             setMessage('');
+
+            toast.success("Wish sent ✨ The world hears you.");
             //   onWishPosted(); // Trigger refresh
+            track('Wish Posted', {
+                region: region,
+                length: message.length
+            })
         } catch (err) {
             console.error("Failed to post wish", err);
+            const errorMessage =
+                err.response?.status === 429
+                    ? "You're sending wishes too fast. Slow down ✋"
+                    : "Failed to send wish. Please try again.";
+
+            toast.error(errorMessage);
         } finally {
             setIsSubmitting(false);
         }
     };
 
     return (
-        <div className="flex flex-col md:flex-row gap-6 h-full">
+        <div id="make-a-wish" className="flex flex-col md:flex-row gap-6 h-full">
             {/* Form Section */}
             <div className="md:w-1/3 bg-slate-800 p-6 rounded-xl border border-slate-700 h-fit">
                 <h3 className="text-xl font-bold text-amber-400 mb-4">Make a Wish ✨</h3>
@@ -93,18 +110,18 @@ const WishWall = ({ wishes, currentTime, isWsConnected }) => {
                             <span className="text-[10px] font-bold text-red-400 uppercase tracking-tighter">Disconnected</span>
                         </div>
                     ) || (
-                        <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/50 rounded-full animate-pulse">
-                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                            <span className="text-[10px] font-bold text-green-400 uppercase tracking-tighter">Live</span>
-                        </div>
-                    )}
+                            <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/50 rounded-full animate-pulse">
+                                <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                                <span className="text-[10px] font-bold text-green-400 uppercase tracking-tighter">Live</span>
+                            </div>
+                        )}
                 </div>
 
                 <div className="wish-scroll overflow-y-auto flex-1 space-y-4 pr-2">
                     {!isWsConnected && (
                         <div className="bg-slate-900/90 border border-slate-700 p-3 rounded-lg text-center mb-4 flex flex-col gap-2 shadow-2xl">
                             {/* <p className="text-xs text-slate-400">Connection lost! Attempting to reconnect...</p> */}
-                            <p className="text-xs text-slate-400">Once connected, the session remains active for {WS_TIMEOUT/60} minutes.</p>
+                            <p className="text-xs text-slate-400">Once connected, the session remains active for {WS_TIMEOUT / 60} minutes.</p>
                             <button
                                 onClick={() => window.location.reload()}
                                 className="text-[10px] text-amber-500 font-bold hover:underline"

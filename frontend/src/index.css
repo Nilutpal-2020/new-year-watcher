@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  scroll-behavior: smooth;
+}
+
 /* Dark Theme Global Overrides */
 body {
   @apply bg-slate-900 text-slate-100;

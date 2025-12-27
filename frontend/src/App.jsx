@@ -1,12 +1,10 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { DateTime } from 'luxon';
 import MapViz from './components/MapViz';
 import WishWall from './components/WishWall';
 import Countdown from './components/Countdown';
 
-import { SpeedInsights } from "@vercel/speed-insights/react"
-import { Analytics } from '@vercel/analytics/react';
 
 function App() {
     const [currentTime, setCurrentTime] = useState(DateTime.now().setZone('utc'));
@@ -63,7 +61,7 @@ function App() {
             ws.current = new WebSocket(WS_URL);
 
             ws.current.onopen = () => {
-                console.log("✅ WebSocket Connected");
+                console.log("WebSocket Connected");
                 setIsWsConnected(true);
             };
 
@@ -77,7 +75,7 @@ function App() {
             };
 
             ws.current.onclose = (event) => {
-                console.log(`❌ WebSocket Closed: ${event.code} ${event.reason}`);
+                console.log(`WebSocket Closed: ${event.code} ${event.reason}`);
                 setIsWsConnected(false);
 
                 // // Only reconnect if not closed intentionally by the client (code 1000)
@@ -109,6 +107,23 @@ function App() {
     const utcString = currentTime.toFormat('HH:mm:ss');
     const dateString = currentTime.toFormat('ccc, MMM dd, yyyy');
 
+    const HelpTooltip = ({ text }) => {
+        return (
+            <div className="relative inline-block ml-1 group z-10">
+                <span className="cursor-help text-slate-500 hover:text-amber-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                    </svg>
+                </span>
+
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-3 bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible  text-center pointer-events-none">
+                    {text}
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8 font-sans">
             <div className="max-w-5xl mx-auto space-y-8">
@@ -128,13 +143,45 @@ function App() {
                     </div>
                 </header>
 
+                <nav className="sticky top-0 z-9999 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 py-3 px-4 mb-8">
+                    <div className="container flex flex-col md:flex-row justify-between items-center">
+                        <div className="flex items-center gap-5 md:gap-8 text-xs md:text-sm font-bold uppercase tracking-wider">
+                            <a href="#dashboard-top" className="text-slate-400 hover:text-amber-400 transition-colors">
+                                Dashboard
+                            </a>
+                            <a href="#map-view" className="text-slate-400 hover:text-amber-400 transition-colors">
+                                Live Map
+                            </a>
+                            <a href="#make-a-wish" className="text-slate-400 hover:text-amber-400 transition-colors flex items-center gap-1">
+                                Make a Wish <span>✨</span>
+                            </a>
+                            {/* <a href="#buy-coffee" className="flex items-center gap-2 bg-amber-500/10 text-amber-400 border border-amber-500/50 px-3 py-2 rounded-full hover:bg-amber-500 hover:text-slate-900 transition-all">
+                                <span>☕</span> <span className="hidden md:inline">Buy me a Coffee</span>
+                            </a> */}
+                        </div>
+                    </div>
+                </nav>
+
                 <section>
                     <Countdown currentTime={currentTime} />
                 </section>
 
+                <div className="h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent my-8"></div>
+
                 <section>
-                    <div className="flex justify-between items-center mb-2 px-1">
-                        <h2 className="text-sm font-semibold text-slate-300">Global Timeline</h2>
+                    <div id="map-view" className="flex justify-between items-center mb-2 px-1">
+                        <div className="flex items-center gap-2 text-xs">
+                            {/* <h2 className="text-sm font-semibold text-slate-200">Global Timeline</h2> */}
+                            <div className="flex items-center">
+                                <label className="text-sm font-semibold text-slate-300 uppercase font-black">Global Timeline</label>
+                                <HelpTooltip text="Shows real-time midnight movement. Zoom in to view longitude motion as a dotted polyline." />
+                            </div>
+                            <div className="flex items-center gap-2 px-1 py-1 bg-green-500/10 border border-green-500/50 rounded-full animate-pulse">
+                                <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                                {/* <span className="text-[10px] font-bold text-green-400 uppercase tracking-tighter">Live</span> */}
+                            </div>
+                        </div>
+
                         <div className="flex items-center gap-4 text-xs">
                             <div className="flex items-center gap-1">
                                 <span className="w-3 h-3 bg-amber-500/20 border border-amber-500 rounded-sm"></span>
@@ -154,7 +201,7 @@ function App() {
                 </section>
 
                 <footer className="text-center text-slate-600 text-xs py-8">
-                    <p>&copy; NewYearWatcher. Live Updates via WebSockets.</p>
+                    <p>&copy; NewYearWatcher {DateTime.now().year}. Live Updates from around the globe.</p>
                 </footer>
             </div>
         </div>
