@@ -11,12 +11,13 @@ const WishWall = ({ wishes, currentTime, isWsConnected }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-    const WS_TIMEOUT = import.meta.env.WS_TIMEOUT || 300;
+    const HZ_TIMEOUT = import.meta.env.WS_TIMEOUT || 300;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!message.trim()) {
             toast.error("Message can't be empty");
+            return;
         };
 
         setIsSubmitting(true);
@@ -33,7 +34,7 @@ const WishWall = ({ wishes, currentTime, isWsConnected }) => {
             setMessage('');
 
             toast.success("Wish sent ✨ The world hears you.");
-            //   onWishPosted(); // Trigger refresh
+            
             track('Wish Posted', {
                 region: region,
                 length: message.length
@@ -52,32 +53,32 @@ const WishWall = ({ wishes, currentTime, isWsConnected }) => {
     };
 
     return (
-        <div id="make-a-wish" className="flex flex-col md:flex-row gap-6 h-full">
+        <div id="make-a-wish" className="flex flex-col md:flex-row gap-6 h-full transition-colors">
             {/* Form Section */}
-            <div className="md:w-1/3 bg-slate-800 p-6 rounded-xl border border-slate-700 h-fit">
-                <h3 className="text-xl font-bold text-amber-400 mb-4">Make a Wish ✨</h3>
+            <div className="md:w-1/3 bg-white dark:bg-slate-800 p-6 rounded-xl borderQX border-slate-200 dark:border-slate-700 h-fit shadow-sm dark:shadow-none transition-colors">
+                <h3 className="text-xl font-bold text-amber-600 dark:text-amber-400 mb-4">Make a Wish ✨</h3>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">Name (Optional)</label>
+                        <label className="block text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Name (Optional)</label>
                         <input
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             maxLength={50}
-                            className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-sm focus:border-amber-400 focus:outline-none transition-colors"
+                            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded p-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-amber-400 focus:outline-none transition-colors"
                             placeholder="Anonymous"
                         />
                     </div>
                     <div>
-                        <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">Message</label>
+                        <label className="block text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Message</label>
                         <textarea
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
                             maxLength={200}
-                            className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-sm h-24 resize-none focus:border-amber-400 focus:outline-none transition-colors"
+                            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded p-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 h-24 resize-none focus:border-amber-400 focus:outline-none transition-colors"
                             placeholder="Happy New Year from..."
                         />
-                        <div className="text-right text-xs text-slate-500 mt-1">{message.length}/200</div>
+                        <div className="text-right text-xs text-slate-400 dark:text-slate-500 mt-1">{message.length}/200</div>
                     </div>
                     <button
                         disabled={isSubmitting}
@@ -101,30 +102,29 @@ const WishWall = ({ wishes, currentTime, isWsConnected }) => {
             </div>
 
             {/* Feed Section */}
-            <div className="md:w-2/3 bg-slate-800/50 rounded-xl border border-slate-700 p-4 flex flex-col h-[370px] relative">
-                <div className="flex justify-between items-center mb-4 sticky top-0 bg-slate-800/80 backdrop-blur-sm p-1 rounded-lg z-10">
-                    <h3 className="text-lg font-semibold text-slate-300 pl-2">Live Global Wishes</h3>
-                    {!isWsConnected && (
-                        <div className="flex items-center gap-2 px-3 py-1 bg-red-500/10 border border-red-500/50 rounded-full animate-pulse">
+            <div className="md:w-2/3 bg-slate-100 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 p-4 flex flex-col h-[370px] relative transition-colors">
+                <div className="flex justify-between items-center mb-4 sticky top-0 bg-slate-100/90 dark:bg-slate-800/80 backdrop-blur-sm p-1 rounded-lg z-10 transition-colors">
+                    <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 pl-2">Live Global Wishes</h3>
+                    {!isWsConnected ? (
+                        <div className="flex items-center gap-2 px-3 py-1 bg-red-100 dark:bg-red-500/10 border border-red-200 dark:border-red-500/50 rounded-full animate-pulse transition-colors">
                             <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
-                            <span className="text-[10px] font-bold text-red-400 uppercase tracking-tighter">Disconnected</span>
+                            <span className="text-[10px] font-bold text-red-600 dark:text-red-400 uppercase tracking-tighter">Disconnected</span>
                         </div>
-                    ) || (
-                            <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/50 rounded-full animate-pulse">
-                                <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                                <span className="text-[10px] font-bold text-green-400 uppercase tracking-tighter">Live</span>
-                            </div>
-                        )}
+                    ) : (
+                        <div className="flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-500/10 border border-green-200 dark:border-green-500/50 rounded-full animate-pulse transition-colors">
+                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                            <span className="text-[10px] font-bold text-green-600 dark:text-green-400 uppercase tracking-tighter">Live</span>
+                        </div>
+                    )}
                 </div>
 
                 <div className="wish-scroll overflow-y-auto flex-1 space-y-4 pr-2">
                     {!isWsConnected && (
-                        <div className="bg-slate-900/90 border border-slate-700 p-3 rounded-lg text-center mb-4 flex flex-col gap-2 shadow-2xl">
-                            {/* <p className="text-xs text-slate-400">Connection lost! Attempting to reconnect...</p> */}
-                            <p className="text-xs text-slate-400">Once connected, the session remains active for {WS_TIMEOUT / 60} minutes.</p>
+                        <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-700 p-3 rounded-lg text-center mb-4 flex flex-col gap-2 shadow-sm dark:shadow-2xl transition-colors">
+                            <p className="text-xs text-slate-500 dark:text-slate-400">Once connected, the session remains active for {Math.floor(HZ_TIMEOUT / 60)} minutes.</p>
                             <button
                                 onClick={() => window.location.reload()}
-                                className="text-[10px] text-amber-500 font-bold hover:underline"
+                                className="text-[10px] text-amber-600 dark:text-amber-500 font-bold hover:underline"
                             >
                                 Reload Page
                             </button>
@@ -142,17 +142,17 @@ const WishWall = ({ wishes, currentTime, isWsConnected }) => {
                             const timeLablel = diffSeconds < 60 ? "just now" : messageTime.toRelative({ base: currentTime });
                             return (
                                 <div key={idx} className="flex flex-col items-start gap-1 w-full">
-                                    <div className="flex justify-between items-center bg-gradient-to-br from-slate-800 to-slate-900 p-4 rounded-2xl rounded-tl-none border border-slate-700/50 hover:border-amber-500/30 transition-all shadow-md w-full max-w-[100%] group">
-                                        <span className="text-slate-100 text-sm leading-relaxed">"{w.message}"</span>
-                                        <span className="text-[10px] text-slate-500 italic">
+                                    <div className="flex justify-between items-center bg-white dark:bg-gradient-to-br dark:from-slate-800 dark:to-slate-900 p-4 rounded-2xl rounded-tl-none border border-slate-200 dark:border-slate-700/50 hover:border-amber-400 dark:hover:border-amber-500/30 transition-all shadow-sm w-full max-w-[100%] group">
+                                        <span className="text-slate-800 dark:text-slate-100 text-sm leading-relaxed">"{w.message}"</span>
+                                        <span className="text-[10px] text-slate-400 dark:text-slate-500 italic">
                                             {w.region}
                                         </span>
                                     </div>
-                                    <div className="flex justify-between items-center gap-4 text-[9px] text-slate-600 ml-1">
-                                        <span className="text-amber-400 text-[11px] tracking-tight capitalize">
+                                    <div className="flex justify-between items-center gap-4 text-[9px] text-slate-500 dark:text-slate-600 ml-1">
+                                        <span className="text-amber-600 dark:text-amber-400 text-[11px] tracking-tight capitalize">
                                             - {w.name}
                                         </span>
-                                        <span className="text-[10px] text-slate-500 italic">
+                                        <span className="text-[10px] text-slate-400 dark:text-slate-500 italic">
                                             {timeLablel}
                                         </span>
                                     </div>

@@ -41,8 +41,24 @@
   <meta name="twitter:image" content="https://new-year-watcher.vercel.app/public/live-wishes.jpg" />
 
 </head>
-  <div id="root"></div>
-  <script type="module" src="/src/main.jsx"></script>
+<div id="root"></div>
+<script type="module" src="/src/main.jsx"></script>
+<script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "New Year Watcher",
+      "url": "https://new-year-watcher.vercel.app/",
+      "applicationCategory": "ReferenceApplication",
+      "operatingSystem": "All",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "description": "A real-time visualization of New Year celebrations across global timezones."
+    }
+  </script>
 </body>
 
 </html>

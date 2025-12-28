@@ -35,7 +35,7 @@ function MapController({ midnightLon }) {
     return null;
 }
 
-const MapViz = ({ midnightLon }) => {
+const MapViz = ({ midnightLon, theme }) => {
     const [isHovered, setIsHovered] = useState(false);
     // Define the "New Year Zone" rectangle.
     // It spans from the International Date Line (180) to the current midnight longitude.
@@ -53,29 +53,31 @@ const MapViz = ({ midnightLon }) => {
     // A robust approach creates two rectangles if crossing 180, 
     // but our "midnightLon" moves from 180 down to -180 linearly.
 
+    const darkTiles = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+    const lightTiles = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+
     return (
-        <div className="h-[400px] w-full rounded-xl overflow-hidden shadow-2xl border border-slate-700">
+        <div className="h-[400px] w-full rounded-xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700 transition-colors">
             <MapContainer
                 center={[20, 0]}
                 zoom={1.5}
                 minZoom={1.5}
                 maxZoom={10}
                 scrollWheelZoom={true}
-                style={{ height: "100%", width: "100%", background: "#0f172a" }}
+                style={{ height: "100%", width: "100%", background: theme === 'dark' ? "#0f172a" : "#cbd5e1" }}
                 zoomControl={true}
             >
                 <MapController midnightLon={midnightLon} />
-                {/* Dark Matter Map Tiles */}
+
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                    url={theme === 'dark' ? darkTiles : lightTiles}
                 />
 
-                {/* The Midnight Line */}
                 <Polyline
                     positions={[[-90, midnightLon], [90, midnightLon]]}
                     pathOptions={{
-                        color: isHovered ? '#fbbf24' : '#f59e0b',
+                        color: theme === 'dark' ? '#f59e0b' : '#ea580c',
                         weight: isHovered ? 4 : 2,
                         dashArray: isHovered ? '0' : '5, 10'
                     }}
@@ -84,7 +86,7 @@ const MapViz = ({ midnightLon }) => {
                         mouseout: () => setIsHovered(false),
                     }}
                 >
-                    <Tooltip permanent={false} direction="left" offset={[-5, 0]} className="bg-slate-800 border border-slate-700 text-amber-400 font-bold px-2 py-1 rounded shadow-xl">
+                    <Tooltip permanent={false} direction="left" offset={[-5, 0]} className={`${theme === 'dark' ? 'bg-slate-800 text-amber-400' : 'bg-white text-orange-600'} border border-slate-200 dark:border-slate-700 font-bold px-2 py-1 rounded shadow-xl`}>
                         Midnight Line
                     </Tooltip>
                 </Polyline>
@@ -92,7 +94,11 @@ const MapViz = ({ midnightLon }) => {
                 {/* The "Already Celebrated" Zone (Gold Overlay) */}
                 <Rectangle
                     bounds={alreadyCelebratedBounds}
-                    pathOptions={{ color: "transparent", fillColor: "#f59e0b", fillOpacity: 0.2 }}
+                    pathOptions={{
+                        color: "transparent",
+                        fillColor: theme === 'dark' ? "#f59e0b" : "#f97316",
+                        fillOpacity: 0.2
+                    }}
                 />
 
                 {/* Helper text if the logic wraps weirdly around the date line, 
