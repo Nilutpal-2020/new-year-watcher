@@ -24,7 +24,12 @@ WISH_TTL_SECONDS = 86400  # 24 Hours
 RATE_LIMIT = "5/minute"
 
 WS_TIMEOUT = os.getenv("WS_TIMEOUT", 300)
-CORS_ORIGINS = os.getenv("CORS_ORIGINS", ["*"])
+# CORS_ORIGINS = os.getenv("CORS_ORIGINS", ["*"])
+raw_origins = os.getenv("CORS_ORIGINS", "*")
+if raw_origins == "*":
+    CORS_ORIGINS = ["*"]
+else:
+    CORS_ORIGINS = [origin.strip() for origin in raw_origins.split(",")]
 
 # Setup Logging
 logging.basicConfig(level=logging.INFO)

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { DateTime } from 'luxon';
 import { Link } from 'react-router-dom';
@@ -13,36 +13,29 @@ import FireworksBackground from './components/FireworksBackground';
 function Dashboard() {
     const [currentTime, setCurrentTime] = useState(DateTime.now().setZone('utc'));
     const [wishes, setWishes] = useState([]);
-    const [isWsConnected, setIsWsConnected] = useState(false);
-
-    // Track theme state specifically for MapViz (Leaflet needs JS prop, not just CSS)
     const [currentTheme, setCurrentTheme] = useState('dark');
 
-    const ws = useRef(null);
-    const reconnectTimeoutRef = useRef(null);
+    // State for local fireworks logic
+    const [isLocalCelebrationSoon, setIsLocalCelebrationSoon] = useState(false);
 
-    // Use Environment Variables
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-    const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000/ws';
+    const WISH_LIMITS = import.meta.env.WISH_LIMITS || 50;
 
-    // Calculation logic mirror of the backend
     const calculateMidnightLongitude = (dt) => {
         const hours = dt.hour + (dt.minute / 60) + (dt.second / 3600);
-        // Formula: Midnight is 180 degrees away from Noon.
         let longitude = (12 - hours) * 15 - 180;
-
-        // Normalize to -180 to 180 range
         while (longitude > 180) longitude -= 360;
         while (longitude < -180) longitude += 360;
-
         return longitude;
     };
 
     const midnightLon = calculateMidnightLongitude(currentTime);
 
-    const fetchInitialWishes = async () => {
+    // Fetch latest 10 wishes (Stateless)
+    const fetchWishes = async () => {
         try {
-            const res = await axios.get(`${API_URL}/wishes`);
+            // Added limit=10 query param
+            const res = await axios.get(`${API_URL}/wishes?limit=${WISH_LIMITS}`);
             setWishes(res.data);
         } catch (e) { console.error("Wish fetch failed"); }
     };
@@ -51,60 +44,41 @@ function Dashboard() {
     const nextYear = currentYear + 1;
 
     useEffect(() => {
-        document.title = `New Year Watcher | Countdown to ${nextYear}`
+        document.title = `Live New Year | Countdown to ${nextYear}`
 
-        fetchInitialWishes();
+        fetchWishes(); // Initial fetch
 
+        // Clock Interval (1s)
         const clockInterval = setInterval(() => {
-            setCurrentTime(DateTime.now().setZone('utc'));
+            const nowUtc = DateTime.now().setZone('utc');
+            setCurrentTime(nowUtc);
+
+            // --- LOCAL FIREWORKS CHECK ---
+            const userZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const nowLocal = DateTime.now().setZone(userZone);
+
+            const targetYear = nowLocal.month === 1 ? nowLocal.year : nowLocal.year + 1;
+            const target = DateTime.fromObject({ year: targetYear, month: 1, day: 1 }, { zone: userZone });
+
+            const diffHours = target.diff(nowLocal, 'hours').hours;
+
+            // Trigger if less than 24 hours away (future) or recently passed (within 24 hours)
+            if (diffHours < 24 && diffHours > -24) {
+                setIsLocalCelebrationSoon(true);
+            } else {
+                setIsLocalCelebrationSoon(false);
+            }
+
         }, 1000);
 
-        const connectWebSocket = () => {
-            if (reconnectTimeoutRef.current) {
-                clearTimeout(reconnectTimeoutRef.current);
-                reconnectTimeoutRef.current = null;
-            }
-
-            if (ws.current && (ws.current.readyState === WebSocket.OPEN || ws.current.readyState === WebSocket.CONNECTING)) {
-                return;
-            }
-
-            console.log("Attempting to connect to WebSocket...");
-            ws.current = new WebSocket(WS_URL);
-
-            ws.current.onopen = () => {
-                console.log("WebSocket Connected");
-                setIsWsConnected(true);
-            };
-
-            ws.current.onmessage = (event) => {
-                try {
-                    const newWish = JSON.parse(event.data);
-                    setWishes((prevWishes) => [newWish, ...prevWishes]);
-                } catch (err) {
-                    console.error("Failed to parse message:", err);
-                }
-            };
-
-            ws.current.onclose = (event) => {
-                console.log(`WebSocket Closed: ${event.code} ${event.reason}`);
-                setIsWsConnected(false);
-            };
-
-            ws.current.onerror = (err) => {
-                console.error("WebSocket Error:", err);
-            };
-        };
-
-        connectWebSocket();
+        // Wish Refresh Interval (10s) - Polls for new wishes
+        const wishRefreshInterval = setInterval(() => {
+            fetchWishes();
+        }, 10000);
 
         return () => {
             clearInterval(clockInterval);
-            if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-            if (ws.current) {
-                ws.current.onclose = null;
-                ws.current.close(1000, "Component unmounted");
-            }
+            clearInterval(wishRefreshInterval);
         };
     }, []);
 
@@ -129,14 +103,21 @@ function Dashboard() {
     };
 
     return (
-        <div id="dashboard-top" className="min-h-screen p-4 md:p-8 font-sans transition-colors duration-300">
-            <FireworksBackground theme={currentTheme} intensity="normal" />
-            <div className="max-w-5xl mx-auto space-y-8">
+        <div id="dashboard-top" className="min-h-screen p-4 md:p-8 font-sans transition-colors duration-300 relative">
+            {
+                isLocalCelebrationSoon &&
+                <FireworksBackground
+                    theme={currentTheme}
+                    intensity={isLocalCelebrationSoon ? 'high' : 'normal'}
+                />
+            }
+
+            <div className="max-w-5xl mx-auto space-y-8 relative z-10">
                 {/* Header */}
                 <header className="flex justify-between items-end border-b border-slate-200 dark:border-slate-700 pb-4 transition-colors">
                     <div>
                         <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-300 dark:to-orange-500">
-                            New Year Watcher
+                            Live New Year
                         </h1>
                         <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 transition-colors">
                             Tracking the arrival of the New Year, zone by zone.
@@ -145,7 +126,6 @@ function Dashboard() {
 
                     <div className="flex flex-col items-end gap-3">
                         <div className="flex items-center gap-3">
-                            {/* Theme Toggle Button */}
                             <ThemeToggle onThemeChange={setCurrentTheme} />
 
                             <div className="text-right">
@@ -192,9 +172,6 @@ function Dashboard() {
                                 <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase font-black transition-colors">Global Timeline</label>
                                 <HelpTooltip text="Shows real-time midnight movement. Zoom in to view longitude motion as a dotted polyline." />
                             </div>
-                            <div className="flex items-center gap-2 px-1 py-1 bg-green-100 dark:bg-green-500/10 border border-green-200 dark:border-green-500/50 rounded-full animate-pulse transition-colors">
-                                <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                            </div>
                         </div>
 
                         <div className="flex items-center gap-4 text-xs">
@@ -209,13 +186,13 @@ function Dashboard() {
                         </div>
                     </div>
 
-                    {/* Pass currentTheme to MapViz to switch tile URLs */}
                     <MapViz midnightLon={midnightLon} theme={currentTheme} />
                 </section>
 
                 {/* Wish Wall Section */}
                 <section>
-                    <WishWall wishes={wishes} currentTime={currentTime} isWsConnected={isWsConnected} />
+                    {/* Pass fetchWishes as onWishPosted */}
+                    <WishWall wishes={wishes} currentTime={currentTime} onWishPosted={fetchWishes} />
                 </section>
 
                 <div className="my-6">
@@ -224,7 +201,7 @@ function Dashboard() {
 
                 {/* Footer */}
                 <footer className="text-center text-slate-500 dark:text-slate-600 text-xs py-8 transition-colors">
-                    <p>&copy; New Year Watcher {DateTime.now().year}. Live Updates from around the globe.</p>
+                    <p>&copy; Live New Year {DateTime.now().year}. Live Updates from around the globe.</p>
                 </footer>
             </div>
         </div>

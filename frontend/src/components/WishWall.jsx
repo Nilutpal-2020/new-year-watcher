@@ -5,13 +5,12 @@ import { DateTime } from 'luxon';
 import { track } from '@vercel/analytics';
 import { toast } from 'sonner';
 
-const WishWall = ({ wishes, currentTime, isWsConnected }) => {
+const WishWall = ({ wishes, currentTime, onWishPosted }) => {
     const [name, setName] = useState('');
     const [message, setMessage] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-    const HZ_TIMEOUT = import.meta.env.WS_TIMEOUT || 300;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -38,7 +37,13 @@ const WishWall = ({ wishes, currentTime, isWsConnected }) => {
             track('Wish Posted', {
                 region: region,
                 length: message.length
-            })
+            });
+
+            // Refresh the wishes list immediately
+            if (onWishPosted) {
+                onWishPosted();
+            }
+
         } catch (err) {
             console.error("Failed to post wish", err);
             const errorMessage =
@@ -104,32 +109,10 @@ const WishWall = ({ wishes, currentTime, isWsConnected }) => {
             {/* Feed Section */}
             <div className="md:w-2/3 bg-slate-100 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 p-4 flex flex-col h-[370px] relative transition-colors">
                 <div className="flex justify-between items-center mb-4 sticky top-0 bg-slate-100/90 dark:bg-slate-800/80 backdrop-blur-sm p-1 rounded-lg z-10 transition-colors">
-                    <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 pl-2">Live Global Wishes</h3>
-                    {!isWsConnected ? (
-                        <div className="flex items-center gap-2 px-3 py-1 bg-red-100 dark:bg-red-500/10 border border-red-200 dark:border-red-500/50 rounded-full animate-pulse transition-colors">
-                            <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
-                            <span className="text-[10px] font-bold text-red-600 dark:text-red-400 uppercase tracking-tighter">Disconnected</span>
-                        </div>
-                    ) : (
-                        <div className="flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-500/10 border border-green-200 dark:border-green-500/50 rounded-full animate-pulse transition-colors">
-                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                            <span className="text-[10px] font-bold text-green-600 dark:text-green-400 uppercase tracking-tighter">Live</span>
-                        </div>
-                    )}
+                    <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 pl-2">Global Wishes</h3>
                 </div>
 
                 <div className="wish-scroll overflow-y-auto flex-1 space-y-4 pr-2">
-                    {!isWsConnected && (
-                        <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-700 p-3 rounded-lg text-center mb-4 flex flex-col gap-2 shadow-sm dark:shadow-2xl transition-colors">
-                            <p className="text-xs text-slate-500 dark:text-slate-400">Once connected, the session remains active for {Math.floor(HZ_TIMEOUT / 60)} minutes.</p>
-                            <button
-                                onClick={() => window.location.reload()}
-                                className="text-[10px] text-amber-600 dark:text-amber-500 font-bold hover:underline"
-                            >
-                                Reload Page
-                            </button>
-                        </div>
-                    )}
                     {wishes.length === 0 ? (
                         <div className="text-center text-slate-500 mt-10">Be the first to wish the world a Happy New Year!</div>
                     ) : (

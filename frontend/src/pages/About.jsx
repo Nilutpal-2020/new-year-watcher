@@ -6,15 +6,15 @@ const About = () => {
     return (
         <div className="min-h-screen bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-300 font-sans selection:bg-amber-500 selection:text-white">
             {/* Dynamic SEO Head */}
-            <title>About - New Year Watcher</title>
-            <meta name="description" content="Learn about the philosophy and technology behind New Year Watcher, a real-time global celebration tracker built with React and FastAPI." />
+            <title>About - Live New Year</title>
+            <meta name="description" content="Learn about the philosophy and technology behind Live New Year, a real-time global celebration tracker built with React and FastAPI." />
             <link rel="canonical" href="https://new-year-watcher.vercel.app/about" />
 
             {/* Navigation */}
             <nav className="sticky top-0 z-50 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 py-4 px-6">
                 <div className="max-w-4xl mx-auto flex justify-between items-center">
                     <Link to="/" className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-300 dark:to-orange-500">
-                        New Year Watcher
+                        Live New Year
                     </Link>
                     <div className="flex items-center gap-4">
                         <Link to="/" className="text-sm font-bold text-slate-600 hover:text-amber-600 dark:text-slate-400 dark:hover:text-amber-400 transition-colors">
@@ -33,7 +33,7 @@ const About = () => {
                         <span className="text-amber-500 dark:text-amber-400">Shared Human Experience</span>
                     </h1>
                     <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl mx-auto">
-                        Timezones often divide us, creating distance. New Year Watcher exists to do the opposite:
+                        Timezones often divide us, creating distance. Live New Year exists to do the opposite:
                         visualizing the one moment in the year where the entire world shares a single, rolling celebration.
                     </p>
                 </section>
@@ -82,7 +82,7 @@ const About = () => {
 
             <footer className="border-t border-slate-200 dark:border-slate-800 py-12 text-center">
                 <p className="text-slate-500 dark:text-slate-600 text-sm">
-                    © {new Date().getFullYear()} New Year Watcher.
+                    © {new Date().getFullYear()} Live New Year.
                 </p>
             </footer>
         </div>

@@ -7,7 +7,7 @@ import { toast } from 'sonner'; // Optional: for feedback if they try to force i
 const DEFAULT_CITIES = [];
 
 const ALL_ZONES = [
-    { label: "(UTC+14) Kiritimati", value: "Etc/GMT+12" },
+    { label: "(UTC+14) Kiritimati", value: "Pacific/Kiritimati" },
     { label: "(UTC+13) Tongatapu", value: "Pacific/Tongatapu" },
     { label: "(UTC+12) Auckland", value: "Pacific/Auckland" },
     { label: "(UTC+11) Noumea", value: "Pacific/Noumea" },

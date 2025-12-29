@@ -15,7 +15,7 @@ const ShareBlock = () => {
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: 'New Year Watcher',
+                    title: 'Live New Year',
                     text: text,
                     url: url,
                 });

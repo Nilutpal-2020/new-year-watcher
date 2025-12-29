@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 
-const FireworksBackground = ({ theme = 'dark', intensity = 'normal' }) => {
+const FireworksBackground = ({ theme = 'dark', intensity = 'normal', enableExplosions = true }) => {
     const canvasRef = useRef(null);
 
     useEffect(() => {
@@ -13,7 +13,7 @@ const FireworksBackground = ({ theme = 'dark', intensity = 'normal' }) => {
         // Configuration
         const particles = [];
         const fireworks = [];
-        
+
         // Brand Colors: Amber-500, Orange-600, Yellow-400, White
         const colors = [
             '#f59e0b', // Amber
@@ -74,13 +74,14 @@ const FireworksBackground = ({ theme = 'dark', intensity = 'normal' }) => {
                 this.y = y;
                 this.color = color;
                 const angle = Math.random() * Math.PI * 2;
-                const velocity = Math.random() * 3 + 1; // Explosion force
-                this.vx = Math.cos(angle) * velocity;
-                this.vy = Math.sin(angle) * velocity;
+                // const Qr = Math.random() * 3 + 1; // Explosion force
+                this.vx = Math.cos(angle) * Math.random() * 3;
+                this.vy = Math.sin(angle) * Math.random() * 3;
                 this.alpha = 1;
-                this.friction = 0.98; // Slow down
-                this.gravity = 0.05; // Fall down
+                this.friction = 0.96;
+                this.gravity = 0.05;
                 this.decay = Math.random() * 0.015 + 0.01;
+                this.flicker = 0;
             }
 
             update() {
@@ -90,10 +91,16 @@ const FireworksBackground = ({ theme = 'dark', intensity = 'normal' }) => {
                 this.x += this.vx;
                 this.y += this.vy;
                 this.alpha -= this.decay;
+
+                // Sparkle effect calculation
+                this.flicker = Math.random() > 0.8 ? 0.2 : 0;
             }
 
             draw() {
-                ctx.globalAlpha = this.alpha;
+                // Add sparkle flicker to alpha
+                const drawAlpha = Math.max(0, Math.min(1, this.alpha + (Math.random() * 0.4 - 0.2)));
+
+                ctx.globalAlpha = drawAlpha;
                 ctx.fillStyle = this.color;
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
@@ -106,7 +113,7 @@ const FireworksBackground = ({ theme = 'dark', intensity = 'normal' }) => {
                 this.x = Math.random() * width;
                 this.y = height;
                 this.targetY = height * 0.2 + Math.random() * (height * 0.5); // Explode in upper half
-                this.speed = Math.random() * 3 + 8; // Launch speed
+                this.speed = Math.random() * 3 + 10; // Launch speed
                 this.color = colors[Math.floor(Math.random() * colors.length)];
                 this.particles = [];
                 this.exploded = false;
@@ -136,7 +143,7 @@ const FireworksBackground = ({ theme = 'dark', intensity = 'normal' }) => {
 
             explode() {
                 this.exploded = true;
-                const particleCount = 80; // Particles per explosion
+                const particleCount = 100; // Increased particle count
                 for (let i = 0; i < particleCount; i++) {
                     this.particles.push(new FireworkParticle(this.x, this.y, this.color));
                 }
@@ -144,7 +151,7 @@ const FireworksBackground = ({ theme = 'dark', intensity = 'normal' }) => {
 
             draw() {
                 if (!this.exploded) {
-                    // Draw rocket
+                    // Draw rocket with a slight sparkle trail feel
                     ctx.globalAlpha = 1;
                     ctx.fillStyle = this.color;
                     ctx.fillRect(this.x, this.y, 3, 8);
@@ -155,34 +162,31 @@ const FireworksBackground = ({ theme = 'dark', intensity = 'normal' }) => {
             }
         }
 
-        // Initialize Sparks
-        const sparkCount = width < 768 ? 30 : 60; // Fewer on mobile
+        // Initialize Background Sparks (Always active for ambiance)
+        const sparkCount = width < 768 ? 30 : 60;
         for (let i = 0; i < sparkCount; i++) {
             particles.push(new Spark());
         }
 
         // --- Animation Loop ---
         const render = () => {
-            // Trail effect: clear with slight opacity instead of full clear
             ctx.globalCompositeOperation = 'destination-out';
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; 
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
             ctx.fillRect(0, 0, width, height);
-            
-            // For bright fireworks blending
+
             ctx.globalCompositeOperation = 'lighter';
 
-            // Draw Sparks
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
+            // Draw Background Sparks
+            // particles.forEach(p => {
+            //     p.update();
+            //     p.draw();
+            // });
 
             // Handle Fireworks logic
-            // Random chance to launch firework (approx 1 every second at 60fps ~ 1/60 chance)
-            // Increase frequency based on intensity prop
-            const launchChance = intensity === 'high' ? 0.05 : 0.01; 
-            
-            if (Math.random() < launchChance) {
+            // Only spawn NEW fireworks if enabled. Existing ones finish animating.
+            const launchChance = intensity === 'high' ? 0.05 : 0.02;
+
+            if (enableExplosions && Math.random() < launchChance) {
                 fireworks.push(new Firework());
             }
 
@@ -203,16 +207,15 @@ const FireworksBackground = ({ theme = 'dark', intensity = 'normal' }) => {
             window.removeEventListener('resize', resize);
             cancelAnimationFrame(animationFrameId);
         };
-    }, [theme, intensity]);
+    }, [theme, intensity, enableExplosions]);
 
     return (
         <canvas
             ref={canvasRef}
             className="fixed inset-0 pointer-events-none z-0"
-            style={{ 
-                // Using standard CSS mix-blend-modes for better layering over your dark/light backgrounds
+            style={{
                 mixBlendMode: theme === 'dark' ? 'screen' : 'normal',
-                opacity: theme === 'dark' ? 0.8 : 0.4 
+                opacity: theme === 'dark' ? 0.8 : 0.4
             }}
         />
     );
