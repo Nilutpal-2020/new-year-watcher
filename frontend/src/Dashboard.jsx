@@ -200,8 +200,13 @@ function Dashboard() {
                 </div>
 
                 {/* Footer */}
-                <footer className="text-center text-slate-500 dark:text-slate-600 text-xs py-8 transition-colors">
+                <footer className="text-center text-slate-500 dark:text-slate-600 text-xs py-8 transition-colors flex flex-col gap-2 items-center">
                     <p>&copy; Live New Year {DateTime.now().year}. Live Updates from around the globe.</p>
+                    <div className="flex gap-4">
+                        <Link to="/about" className="hover:text-amber-500 transition-colors">About</Link>
+                        <span>•</span>
+                        <Link to="/privacy" className="hover:text-amber-500 transition-colors">Privacy Policy</Link>
+                    </div>
                 </footer>
             </div>
         </div>
