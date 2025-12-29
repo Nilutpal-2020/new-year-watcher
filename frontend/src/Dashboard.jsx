@@ -7,7 +7,8 @@ import MapViz from './components/MapViz';
 import WishWall from './components/WishWall';
 import Countdown from './components/Countdown';
 import ShareBlock from './components/ShareBlock';
-import ThemeToggle from './components/ThemeToggle'; // Import the toggle
+import ThemeToggle from './components/ThemeToggle';
+import FireworksBackground from './components/FireworksBackground';
 
 function Dashboard() {
     const [currentTime, setCurrentTime] = useState(DateTime.now().setZone('utc'));
@@ -129,6 +130,7 @@ function Dashboard() {
 
     return (
         <div id="dashboard-top" className="min-h-screen p-4 md:p-8 font-sans transition-colors duration-300">
+            <FireworksBackground theme={currentTheme} intensity="normal" />
             <div className="max-w-5xl mx-auto space-y-8">
                 {/* Header */}
                 <header className="flex justify-between items-end border-b border-slate-200 dark:border-slate-700 pb-4 transition-colors">
