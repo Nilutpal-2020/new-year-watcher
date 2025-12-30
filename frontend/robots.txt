@@ -1,3 +1,0 @@
-User-agent: *
-Allow: /
-sitemap: https://new-year-watcher.vercel.app/sitemap.xml
