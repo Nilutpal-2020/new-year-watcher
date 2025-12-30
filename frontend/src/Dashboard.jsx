@@ -150,8 +150,8 @@ function Dashboard() {
                             <a href="#make-a-wish" className="text-slate-500 hover:text-amber-500 dark:text-slate-400 dark:hover:text-amber-400 transition-colors flex items-center gap-1">
                                 Make a Wish <span>✨</span>
                             </a>
-                            <Link to="/about" className="text-slate-500 hover:text-amber-500 dark:text-slate-400 dark:hover:text-amber-400 transition-colors">
-                                About
+                            <Link to="/quotes" className="text-amber-600 dark:text-amber-400 hover:text-amber-500 transition-colors">
+                                Get Quotes 💡
                             </Link>
                         </div>
                     </div>
@@ -193,6 +193,24 @@ function Dashboard() {
                 <section>
                     {/* Pass fetchWishes as onWishPosted */}
                     <WishWall wishes={wishes} currentTime={currentTime} onWishPosted={fetchWishes} />
+                </section>
+
+                <section className="my-8">
+                    <div className="bg-gradient-to-r from-slate-800 to-slate-600 rounded-2xl p-8 text-center text-white shadow-xl relative overflow-hidden group">
+                        {/* Decorative background glow */}
+                        {/* <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform"></div> */}
+                        {/* <div className="absolute bottom-0 left-0 -ml-8 -mb-8 w-24 h-24 bg-white/10 rounded-full blur-xl"></div> */}
+
+                        <div className="relative z-10 flex flex-col items-center gap-4">
+                            <h3 className="text-2xl font-bold">Need some to share? ♥</h3>
+                            <p className="text-indigo-100 max-w-lg">
+                                Stuck on what to wish for? Generate a unique New Year quote to get the creativity flowing.
+                            </p>
+                            <Link to="/quotes" className="bg-white text-slate-600 font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all active:scale-95 flex items-center gap-2">
+                                <span>💡</span> Generate Quotes
+                            </Link>
+                        </div>
+                    </div>
                 </section>
 
                 <div className="my-6">

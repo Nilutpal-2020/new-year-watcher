@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Dashboard from './Dashboard';
 import About from './pages/About';
 import PrivacyPage from './pages/PrivacyPage';
+import QuoteGenerator from './pages/QuoteGenerator';
 
 function App() {
     return (
@@ -12,6 +13,7 @@ function App() {
             <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/about" element={<About />} />
+                <Route path="/quotes" element={<QuoteGenerator />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
             </Routes>
         </BrowserRouter>

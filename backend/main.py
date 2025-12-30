@@ -20,11 +20,13 @@ from better_profanity import profanity
 # Load from environment variables for security in production
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
 MAX_WISH_LENGTH = 200
+MAX_QUOTE_LENGTH = 200
 WISH_TTL_SECONDS = 86400  # 24 Hours
 RATE_LIMIT = "5/minute"
 
+ALLOWED_THEMES = ["motivation", "reflection", "joy"]
+
 WS_TIMEOUT = os.getenv("WS_TIMEOUT", 300)
-# CORS_ORIGINS = os.getenv("CORS_ORIGINS", ["*"])
 raw_origins = os.getenv("CORS_ORIGINS", "*")
 if raw_origins == "*":
     CORS_ORIGINS = ["*"]
@@ -46,6 +48,19 @@ async def lifespan(app: FastAPI):
     logger.info("🚀 Connecting to Redis...")
     redis_client = aioredis.from_url(REDIS_URL, encoding="utf-8", decode_responses=True)
     await FastAPILimiter.init(redis_client)
+
+    if await redis_client.scard("quotes:all") == 0:
+        logger.info("Empty DB detected. Seeding default quotes...")
+        defaults = [
+            {"text": "Cheers to a new year and another chance for us to get it right.", "author": "Oprah Winfrey", "theme": "motivation"},
+            {"text": "Life can only be understood backwards; but it must be lived forwards.", "author": "Søren Kierkegaard", "theme": "reflection"},
+            {"text": "With the new day comes new strength and new thoughts.", "author": "Eleanor Roosevelt", "theme": "joy"}
+        ]
+        for q in defaults:
+            q_json = json.dumps(q)
+            await redis_client.sadd("quotes:all", q_json)
+            await redis_client.sadd(f"quotes:{q['theme']}", q_json)
+
     logger.info("✅ Redis & Rate Limiter initialized.")
     yield
     # Shutdown
@@ -76,6 +91,14 @@ class WishCreate(BaseModel):
 
 class Wish(WishCreate):
     timestamp: datetime
+
+class QuoteCreate(BaseModel):
+    text: str
+    author: Optional[str] = "Anonymous"
+    theme: str
+
+class Quote(QuoteCreate):
+    pass
 
 class TimeResponse(BaseModel):
     utc_time: datetime
@@ -201,6 +224,73 @@ async def post_wish(wish: WishCreate):
     await manager.broadcast(new_wish.dict())
     
     return new_wish
+
+@app.post("/quotes", response_model=Quote, dependencies=[Depends(RateLimiter(times=3, seconds=60))])
+async def create_quote(quote: QuoteCreate):
+    """
+    Submit a new quote to the database.
+    - Validates theme.
+    - REJECTS profanity (strict).
+    """
+    if not redis_client:
+        raise HTTPException(status_code=503, detail="Database not available")
+
+    # 1. Validation
+    if quote.theme.lower() not in ALLOWED_THEMES:
+        raise HTTPException(status_code=400, detail=f"Invalid theme. Allowed: {ALLOWED_THEMES}")
+    
+    if len(quote.text) > MAX_QUOTE_LENGTH:
+        raise HTTPException(status_code=400, detail=f"Quote too long (max {MAX_QUOTE_LENGTH} chars)")
+
+    # 2. Profanity Check (Reject, don't just censor)
+    if profanity.contains_profanity(quote.text) or profanity.contains_profanity(quote.author):
+        raise HTTPException(status_code=400, detail="Quote contains inappropriate content.")
+
+    # 3. Store in Redis Sets (for random access)
+    new_quote = Quote(
+        text=quote.text.strip(),
+        author=quote.author.strip() if quote.author else "Anonymous",
+        theme=quote.theme.lower()
+    )
+    
+    quote_json = json.dumps(new_quote.dict())
+    
+    # Add to specific theme set AND 'all' set
+    # Redis Sets (SADD) handle uniqueness automatically
+    await redis_client.sadd("quotes:all", quote_json)
+    await redis_client.sadd(f"quotes:{new_quote.theme}", quote_json)
+
+    return new_quote
+
+@app.get("/quotes", response_model=List[Quote])
+async def get_quotes(theme: Optional[str] = None, limit: int = 5):
+    """
+    Fetch random quotes from Redis.
+    - Uses SRANDMEMBER for O(1) random selection.
+    """
+    if not redis_client:
+        raise HTTPException(status_code=503, detail="Database not available")
+
+    # Determine Redis key
+    target_key = "quotes:all"
+    if theme and theme != "all":
+        if theme.lower() not in ALLOWED_THEMES:
+             raise HTTPException(status_code=400, detail=f"Invalid theme. Allowed: {ALLOWED_THEMES}")
+        target_key = f"quotes:{theme.lower()}"
+
+    # Fetch random members
+    # SRANDMEMBER returns a list if count is provided
+    raw_quotes = await redis_client.srandmember(target_key, limit)
+    
+    # Handle case where srandmember returns None (empty set) or single string
+    if not raw_quotes:
+        return []
+    
+    # Ensure it's a list (aioredis behavior can vary slightly by version on single items)
+    if not isinstance(raw_quotes, list):
+        raw_quotes = [raw_quotes]
+
+    return [json.loads(q) for q in raw_quotes]
 
 # --- WebSocket Endpoint ---
 @app.websocket("/ws")
