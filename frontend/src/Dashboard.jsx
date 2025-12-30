@@ -202,7 +202,7 @@ function Dashboard() {
                         {/* <div className="absolute bottom-0 left-0 -ml-8 -mb-8 w-24 h-24 bg-white/10 rounded-full blur-xl"></div> */}
 
                         <div className="relative z-10 flex flex-col items-center gap-4">
-                            <h3 className="text-2xl font-bold">Need some to share? ♥</h3>
+                            <h3 className="text-2xl font-bold">Something to share today? ♥</h3>
                             <p className="text-indigo-100 max-w-lg">
                                 Stuck on what to wish for? Generate a unique New Year quote to get the creativity flowing.
                             </p>
