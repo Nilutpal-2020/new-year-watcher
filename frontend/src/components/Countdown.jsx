@@ -115,7 +115,7 @@ const SelectionModal = ({ isOpen, onClose, selectedZones, onToggle }) => {
     if (!isOpen) return null;
 
     // Check if limit is reached
-    const MAX_SELECTION = 3;
+    const MAX_SELECTION = 4;
     const isLimitReached = selectedZones.length >= MAX_SELECTION;
 
     return (
@@ -206,8 +206,8 @@ const Countdown = ({ currentTime }) => {
                 return prev.filter(item => item.zone !== zoneObj.value);
             } else {
                 // Add city (Enforce Limit)
-                if (prev.length >= 3) {
-                    toast.error("You can select max 3 cities.");
+                if (prev.length >= 4) {
+                    toast.error("You can select max 4 cities.");
                     return prev;
                 }
                 return [...prev, { name: zoneObj.value, zone: zoneObj.value }];

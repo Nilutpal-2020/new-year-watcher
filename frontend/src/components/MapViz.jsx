@@ -35,7 +35,7 @@ function MapController({ midnightLon }) {
     return null;
 }
 
-const MapViz = ({ midnightLon, theme }) => {
+const MapViz = React.memo(({ midnightLon, theme }) => {
     const [isHovered, setIsHovered] = useState(false);
     // Define the "New Year Zone" rectangle.
     // It spans from the International Date Line (180) to the current midnight longitude.
@@ -108,6 +108,11 @@ const MapViz = ({ midnightLon, theme }) => {
             </MapContainer>
         </div>
     );
-};
+}, (prevProps, nextProps) => {
+    return (
+        prevProps.theme === nextProps.theme &&
+        Math.abs(prevProps.midnightLon - nextProps.midnightLon) < 0.05
+    )
+});
 
 export default MapViz;

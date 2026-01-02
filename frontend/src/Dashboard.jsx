@@ -9,9 +9,15 @@ import Countdown from './components/Countdown';
 import ShareBlock from './components/ShareBlock';
 import ThemeToggle from './components/ThemeToggle';
 import FireworksBackground from './components/FireworksBackground';
+import Traditions from './components/Traditions';
+import Polls from './components/Polls';
+import CelebrationSchedule from './components/CelebrationSchedule';
+import TimeCapsule from './components/TimeCapsule';
+import HolidaysToday from './components/HolidaysToday';
 
 function Dashboard() {
     const [currentTime, setCurrentTime] = useState(DateTime.now().setZone('utc'));
+    const [minuteTicker, setMinuteTicker] = useState(DateTime.now());
     const [wishes, setWishes] = useState([]);
     const [currentTheme, setCurrentTheme] = useState('dark');
 
@@ -69,18 +75,22 @@ function Dashboard() {
                 setIsLocalCelebrationSoon(false);
             }
 
+            if (now.minute !== minuteTicker.minute) {
+                setMinuteTicker(now);
+            }
+
         }, 1000);
 
         // Wish Refresh Interval (10s) - Polls for new wishes
         const wishRefreshInterval = setInterval(() => {
             fetchWishes();
-        }, 10000);
+        }, 30000);
 
         return () => {
             clearInterval(clockInterval);
             clearInterval(wishRefreshInterval);
         };
-    }, []);
+    }, [minuteTicker]);
 
     const utcString = currentTime.toFormat('HH:mm:ss');
     const dateString = currentTime.toFormat('ccc, MMM dd, yyyy');
@@ -162,6 +172,11 @@ function Dashboard() {
                     <Countdown currentTime={currentTime} />
                 </section>
 
+                <section className="my-8 grid md:grid-cols-2 gap-6">
+                    <HolidaysToday />
+                    <CelebrationSchedule currentTime={minuteTicker} />
+                </section>
+
                 <div className="h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-800 to-transparent my-8 transition-colors"></div>
 
                 {/* Map Section */}
@@ -189,10 +204,19 @@ function Dashboard() {
                     <MapViz midnightLon={midnightLon} theme={currentTheme} />
                 </section>
 
+                <section className="my-8 grid md:grid-cols-2 gap-6">
+                    <Traditions />
+                    <Polls />
+                </section>
+
+                <section className="my-12">
+                    <TimeCapsule />
+                </section>
+
                 {/* Wish Wall Section */}
                 <section>
                     {/* Pass fetchWishes as onWishPosted */}
-                    <WishWall wishes={wishes} currentTime={currentTime} onWishPosted={fetchWishes} />
+                    <WishWall wishes={wishes} onWishPosted={fetchWishes} />
                 </section>
 
                 <section className="my-8">

@@ -3,6 +3,7 @@ import time
 import asyncio
 import logging
 import os
+import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional
@@ -61,6 +62,22 @@ async def lifespan(app: FastAPI):
             await redis_client.sadd("quotes:all", q_json)
             await redis_client.sadd(f"quotes:{q['theme']}", q_json)
 
+    if await redis_client.scard("traditions") == 0:
+        logger.info("Empty Traditions DB. Seeding defaults...")
+        default_traditions = [
+            {"country": "Spain", "icon": "es", "text": "Eating 12 grapes at midnight—one for each chime of the clock—for good luck."},
+            {"country": "Brazil", "icon": "br", "text": "Wearing white clothing to ward off bad spirits and jumping over 7 waves in the ocean."},
+            {"country": "Japan", "icon": "jp", "text": "Ringing Buddhist temple bells 108 times (Joya no Kane) to banish the 108 worldly desires."},
+            {"country": "Denmark", "icon": "dk", "text": "Smashing old plates against friends' doors to show affection. The bigger the pile, the more friends you have."},
+            {"country": "Colombia", "icon": "co", "text": "Walking around the block with an empty suitcase at midnight to ensure a year full of travel."},
+            {"country": "Philippines", "icon": "ph", "text": "Eating round fruits and wearing polka dots to attract wealth and prosperity."},
+            {"country": "Greece", "icon": "gr", "text": "Hanging an onion on the front door as a symbol of rebirth and growth."},
+            {"country": "Ecuador", "icon": "ec", "text": "Burning 'año viejo' effigies (scarecrows filled with paper) to destroy the bad vibes of the previous year."},
+            {"country": "Turkey", "icon": "tr", "text": "Sprinkling salt on the doorstep as the clock strikes midnight to bring peace and abundance."}
+        ]
+        for t in default_traditions:
+            await redis_client.sadd("traditions", json.dumps(t))
+
     logger.info("✅ Redis & Rate Limiter initialized.")
     yield
     # Shutdown
@@ -103,6 +120,39 @@ class Quote(QuoteCreate):
 class TimeResponse(BaseModel):
     utc_time: datetime
     midnight_longitude: float 
+
+class PollVote(BaseModel):
+    option_index: int
+
+class PollResult(BaseModel):
+    question: str
+    options: List[str]
+    votes: List[int]
+    total_votes: int
+
+class CapsuleCreate(BaseModel):
+    message: str
+    unlock_date: str = "2026-01-01T00:00:00Z"
+    is_public: bool = False
+
+class CapsuleStats(BaseModel):
+    total_sealed: int
+
+class Tradition(BaseModel):
+    country: str
+    icon: str
+    text: str
+
+POLL_HK = "poll:resolution_2026"
+POLL_QUESTION = "What is your top priority for 2026?"
+POLL_OPTIONS = [
+    "Health & Fitness 💪",
+    "Career Growth 🚀",
+    "Travel & Adventure ✈️",
+    "Learning a New Skill 🧠",
+    "Saving Money 💰",
+    "More Time with Family ❤️"
+]
 
 # --- Connection Manager (Optimized) ---
 class ConnectionManager:
@@ -291,6 +341,135 @@ async def get_quotes(theme: Optional[str] = None, limit: int = 5):
         raw_quotes = [raw_quotes]
 
     return [json.loads(q) for q in raw_quotes]
+
+@app.get("/poll", response_model=PollResult)
+async def get_poll():
+    if not redis_client:
+        raise HTTPException(status_code=503, detail="Database not available")
+
+    raw_votes = await redis_client.hgetall(POLL_HK)
+    
+    vote_counts = [0] * len(POLL_OPTIONS)
+    total = 0
+    
+    for idx_str, count in raw_votes.items():
+        try:
+            idx = int(idx_str)
+            if 0 <= idx < len(POLL_OPTIONS):
+                c = int(count)
+                vote_counts[idx] = c
+                total += c
+        except ValueError:
+            continue
+
+    return {
+        "question": POLL_QUESTION,
+        "options": POLL_OPTIONS,
+        "votes": vote_counts,
+        "total_votes": total
+    }
+
+@app.post("/poll/vote", response_model=PollResult, dependencies=[Depends(RateLimiter(times=5, seconds=60))])
+async def vote_poll(vote: PollVote):
+    if not redis_client:
+        raise HTTPException(status_code=503, detail="Database not available")
+        
+    if vote.option_index < 0 or vote.option_index >= len(POLL_OPTIONS):
+        raise HTTPException(status_code=400, detail="Invalid option")
+
+    await redis_client.hincrby(POLL_HK, str(vote.option_index), 1)
+    
+    return await get_poll()
+
+@app.post("/capsule", response_model=dict, dependencies=[Depends(RateLimiter(times=2, seconds=60))])
+async def seal_capsule(capsule: CapsuleCreate):
+    if not redis_client:
+        raise HTTPException(status_code=503, detail="Database not available")
+        
+    if len(capsule.message) > 500:
+        raise HTTPException(status_code=400, detail="Message too long (max 500 chars)")
+
+    capsule_id = str(uuid.uuid4())
+    
+    # We use a Hash to store the details
+    key = f"capsule:{capsule_id}"
+    data = {
+        "message": censor_text(capsule.message),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "unlock_date": capsule.unlock_date,
+        "is_public": str(capsule.is_public)
+    }
+    
+    await redis_client.hset(key, mapping=data)
+    
+    # Increment global counter
+    await redis_client.incr("stats:capsules_sealed")
+    
+    return {"status": "sealed", "id": capsule_id, "message": "See you in 2026! 🔒"}
+
+@app.get("/capsule/stats", response_model=CapsuleStats)
+async def get_capsule_stats():
+    if not redis_client:
+        return {"total_sealed": 0}
+        
+    count = await redis_client.get("stats:capsules_sealed")
+    return {"total_sealed": int(count) if count else 0}
+
+@app.get("/capsule/{capsule_id}")
+async def get_capsule(capsule_id: str):
+    if not redis_client:
+        raise HTTPException(status_code=503, detail="Database not available")
+
+    key = f"capsule:{capsule_id}"
+    
+    # Check if exists
+    if not await redis_client.exists(key):
+        raise HTTPException(status_code=404, detail="Capsule not found")
+
+    data = await redis_client.hgetall(key)
+    
+    # Check Date Logic
+    unlock_date = datetime.fromisoformat(data["unlock_date"].replace('Z', '+00:00'))
+    now = datetime.now(timezone.utc)
+
+    if now < unlock_date:
+        # Calculate time remaining
+        diff = unlock_date - now
+        days = diff.days
+        return {
+            "status": "locked",
+            "message": "This capsule is still sealed.",
+            "days_remaining": days,
+            "unlock_date": data["unlock_date"]
+        }
+
+    return {
+        "status": "unlocked",
+        "message": data["message"],
+        "created_at": data["created_at"],
+        "unlock_date": data["unlock_date"]
+    }
+
+@app.get("/traditions", response_model=List[Tradition])
+async def get_traditions(limit: int = 6):
+    """
+    Fetch random traditions from Redis.
+    Uses SRANDMEMBER for high-performance O(1) random selection.
+    """
+    if not redis_client:
+        raise HTTPException(status_code=503, detail="Database not available")
+
+    # Fetch random members
+    raw_data = await redis_client.srandmember("traditions", limit)
+    
+    if not raw_data:
+        return []
+    
+    # Ensure list (aioredis might return a single string if limit=1, though unlikely here)
+    if not isinstance(raw_data, list):
+        raw_data = [raw_data]
+
+    return [json.loads(t) for t in raw_data]
 
 # --- WebSocket Endpoint ---
 @app.websocket("/ws")

@@ -1,11 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import axios from 'axios';
 import { DateTime } from 'luxon';
 
 import { track } from '@vercel/analytics';
 import { toast } from 'sonner';
 
-const WishWall = ({ wishes, currentTime, onWishPosted }) => {
+const WishItem = memo(({ wish }) => {
+    const [timeLabel, setTimeLabel] = useState('');
+
+    useEffect(() => {
+        const updateTime = () => {
+            const messageTime = DateTime.fromISO(wish.timestamp, { zone: 'utc' });
+            const now = DateTime.now().setZone('utc');
+            const diff = now.diff(messageTime, 'seconds').seconds;
+            
+            if (diff < 60) setTimeLabel("just now");
+            else setTimeLabel(messageTime.toRelative({ base: now }));
+        };
+
+        updateTime();
+        const interval = setInterval(updateTime, 60000);
+        return () => clearInterval(interval);
+    }, [wish.timestamp]);
+
+    return (
+        <div className="flex flex-col items-start gap-1 w-full">
+             <div className="flex justify-between items-center bg-white dark:bg-gradient-to-br dark:from-slate-800 dark:to-slate-900 p-4 rounded-2xl rounded-tl-none border border-slate-200 dark:border-slate-700/50 hover:border-amber-400 dark:hover:border-amber-500/30 transition-all shadow-sm w-full max-w-[100%] group">
+                <span className="text-slate-800 dark:text-slate-100 text-sm leading-relaxed">"{wish.message}"</span>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 italic">{wish.region}</span>
+            </div>
+            <div className="flex justify-between items-center gap-4 text-[9px] text-slate-500 dark:text-slate-600 ml-1">
+                <span className="text-amber-600 dark:text-amber-400 text-[11px] tracking-tight capitalize">- {wish.name}</span>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 italic">{timeLabel}</span>
+            </div>
+        </div>
+    );
+});
+
+const WishWall = ({ wishes, onWishPosted }) => {
     const [name, setName] = useState('');
     const [message, setMessage] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -113,36 +145,10 @@ const WishWall = ({ wishes, currentTime, onWishPosted }) => {
                 </div>
 
                 <div className="wish-scroll overflow-y-auto flex-1 space-y-4 pr-2">
-                    {wishes.length === 0 ? (
-                        <div className="text-center text-slate-500 mt-10">Be the first to wish the world a Happy New Year!</div>
-                    ) : (
-                        wishes.map((w, idx) => {
-                            const messageTime = DateTime.fromISO(w.timestamp, { zone: 'utc' });
-                            const diffSeconds = Math.abs(
-                                currentTime.diff(messageTime, 'seconds').seconds
-                            );
-
-                            const timeLablel = diffSeconds < 60 ? "just now" : messageTime.toRelative({ base: currentTime });
-                            return (
-                                <div key={idx} className="flex flex-col items-start gap-1 w-full">
-                                    <div className="flex justify-between items-center bg-white dark:bg-gradient-to-br dark:from-slate-800 dark:to-slate-900 p-4 rounded-2xl rounded-tl-none border border-slate-200 dark:border-slate-700/50 hover:border-amber-400 dark:hover:border-amber-500/30 transition-all shadow-sm w-full max-w-[100%] group">
-                                        <span className="text-slate-800 dark:text-slate-100 text-sm leading-relaxed">"{w.message}"</span>
-                                        <span className="text-[10px] text-slate-400 dark:text-slate-500 italic">
-                                            {w.region}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between items-center gap-4 text-[9px] text-slate-500 dark:text-slate-600 ml-1">
-                                        <span className="text-amber-600 dark:text-amber-400 text-[11px] tracking-tight capitalize">
-                                            - {w.name}
-                                        </span>
-                                        <span className="text-[10px] text-slate-400 dark:text-slate-500 italic">
-                                            {timeLablel}
-                                        </span>
-                                    </div>
-                                </div>
-                            )
-                        })
-                    )}
+                    {
+                        wishes.map((w, idx) => (
+                            <WishItem key={w.id || idx} wish={w} />
+                    ))}
                 </div>
             </div>
         </div>
