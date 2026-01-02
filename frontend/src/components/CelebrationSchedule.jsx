@@ -124,7 +124,7 @@ const CelebrationSchedule = ({ currentTime }) => {
                                         </div>
                                         {!isCelebrated && (
                                             <div className="text-[10px] text-slate-400 text-right mt-1 font-mono">
-                                                -{Math.floor(city.diffHours)}h {Math.floor((city.diffHours % 1) * 60)}m
+                                                {Math.floor(city.diffHours)}h {Math.floor((city.diffHours % 1) * 60)}m
                                             </div>
                                         )}
                                     </td>
