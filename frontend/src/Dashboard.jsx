@@ -226,9 +226,9 @@ function Dashboard() {
                         {/* <div className="absolute bottom-0 left-0 -ml-8 -mb-8 w-24 h-24 bg-white/10 rounded-full blur-xl"></div> */}
 
                         <div className="relative z-10 flex flex-col items-center gap-4">
-                            <h3 className="text-2xl font-bold">Something to share today? ♥</h3>
+                            <h3 className="text-2xl font-bold">Feel like sharing a thought today? ♥</h3>
                             <p className="text-indigo-100 max-w-lg">
-                                Stuck on what to wish for? Generate a unique New Year quote to get the creativity flowing.
+                                If you're unsure what to wish for, let a fresh New Year quote jump-start your creativity.
                             </p>
                             <Link to="/quotes" className="bg-white text-slate-600 font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all active:scale-95 flex items-center gap-2">
                                 <span>💡</span> Generate Quotes
