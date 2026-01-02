@@ -150,7 +150,7 @@ const TimeCapsule = () => {
                                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Message</label>
                                 <textarea
                                     value={message} required onChange={(e) => setMessage(e.target.value)}
-                                    placeholder="I hope you accomplished..."
+                                    placeholder="Dear future me, I hope you accomplished..."
                                     maxLength={500}
                                     className="w-full h-24 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg p-3 text-sm focus:border-indigo-500 focus:outline-none resize-none"
                                 />
